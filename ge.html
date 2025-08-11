@@ -1,0 +1,118 @@
+<!-- Logo + Sélecteur de langue -->
+<div id="turnLogo">
+    <img id="turnLogoPhoto" src="img/Image1galile1.png" alt="Logo Galileecommerce">
+    <div id="languageMenu">
+        <div class="langOption" data-lang="fr">🇫🇷 <span style="margin-left: 8px;">Français</span></div>
+        <div class="langOption" data-lang="en">🇬🇧 <span style="margin-left: 8px;">English</span></div>
+    </div>
+</div>
+
+<!-- Contenu principal -->
+<h1 id="comingSoonText"></h1>
+<h2 id="countdownTitle"></h2>
+<div id="countdown"></div>
+<h3 id="ceoMessageTitle"></h3>
+<p id="ceoMessageText"></p>
+
+<!-- Bulles animées -->
+<div class="bubbles" id="bubbles"></div>
+
+<!-- Scripts i18next et jQuery -->
+<script src="https://unpkg.com/i18next@23.4.6/dist/umd/i18next.min.js"></script>
+<script
+    src="https://unpkg.com/i18next-browser-languagedetector@7.0.1/dist/umd/i18nextBrowserLanguageDetector.min.js"></script>
+<script src="https://unpkg.com/jquery@3.6.0/dist/jquery.min.js"></script>
+
+<script>
+    // Traductions
+    const resources = {
+        en: {
+            translation: {
+                "comingSoon": "We are launching soon!",
+                "countdownTitle": "Countdown to launch:",
+                "ceoMessageTitle": "Message from the CEO",
+                "ceoMessage": "We are excited to bring you Galileecommerce very soon. Our team is working hard to deliver the best experience possible. Stay tuned!"
+            }
+        },
+        fr: {
+            translation: {
+                "comingSoon": "Nous arrivons bientôt !",
+                "countdownTitle": "Compte à rebours avant le lancement :",
+                "ceoMessageTitle": "Message du PDG",
+                "ceoMessage": "Nous sommes ravis de vous présenter Galileecommerce très bientôt. Notre équipe travaille dur pour vous offrir la meilleure expérience possible. Restez connectés !"
+            }
+        }
+    };
+
+    // Init i18next
+    i18next
+        .use(i18nextBrowserLanguageDetector)
+        .init({
+            resources,
+            fallbackLng: "fr",
+            debug: false
+        }, function () {
+            updateContent();
+        });
+
+    // Fonction pour mettre à jour le contenu
+    function updateContent() {
+        document.getElementById("comingSoonText").innerHTML = i18next.t("comingSoon");
+        document.getElementById("countdownTitle").innerHTML = i18next.t("countdownTitle");
+        document.getElementById("ceoMessageTitle").innerHTML = i18next.t("ceoMessageTitle");
+        document.getElementById("ceoMessageText").innerHTML = i18next.t("ceoMessage");
+    }
+
+    // Toggle menu langues
+    document.getElementById("turnLogo").addEventListener("click", function () {
+        let menu = document.getElementById("languageMenu");
+        menu.style.display = menu.style.display === "block" ? "none" : "block";
+    });
+
+    // Changement de langue
+    document.querySelectorAll(".langOption").forEach(option => {
+        option.addEventListener("click", function () {
+            let lang = this.getAttribute("data-lang");
+            i18next.changeLanguage(lang, () => {
+                updateContent();
+                document.getElementById("languageMenu").style.display = "none";
+            });
+        });
+    });
+
+    // Compte à rebours
+    const launchDate = new Date("2025-12-31T00:00:00").getTime();
+    setInterval(function () {
+        const now = new Date().getTime();
+        const distance = launchDate - now;
+
+        if (distance < 0) {
+            document.getElementById("countdown").innerHTML = "🚀";
+            return;
+        }
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        document.getElementById("countdown").innerHTML =
+            days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
+    }, 1000);
+
+    // Génération des bulles
+    function createBubbles() {
+        const bubblesContainer = document.getElementById("bubbles");
+        for (let i = 0; i < 20; i++) {
+            let bubble = document.createElement("div");
+            let size = Math.random() * 40 + 10;
+            bubble.classList.add("bubble");
+            bubble.style.width = size + "px";
+            bubble.style.height = size + "px";
+            bubble.style.left = Math.random() * 100 + "%";
+            bubble.style.animationDuration = (Math.random() * 5 + 5) + "s";
+            bubblesContainer.appendChild(bubble);
+        }
+    }
+    createBubbles();
+</script>
