@@ -6,6 +6,10 @@
     <link rel="icon" type="image/x-icon" href="img/logo_galile_mobile.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Galilée Commerce - Bientôt disponible</title>
+
+    <!-- Police moderne et bold -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet" />
+
     <style>
         /* === RESET CSS DE BASE === */
         * {
@@ -15,44 +19,42 @@
         }
 
         body {
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Poppins', sans-serif;
             background-color: #9a1f63;
             color: #fff;
             overflow-x: hidden;
         }
 
-        /* === SECTIONS GÉNÉRALES === */
+        /* === SECTIONS === */
         section {
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
             padding: 4rem 8%;
-            min-height: 100vh;
             gap: 2rem;
-            transition: all 0.3s ease-in-out;
+            position: relative;
         }
 
-        /* Animation d’apparition douce */
-        section {
-            opacity: 0;
-            transform: translateY(30px);
-            animation: fadeInUp 1s ease forwards;
+        /* ✅ Supprime tout espace entre les sections */
+        section + section {
+            margin-top: 0;
+            padding-top: 0;
         }
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* ✅ Supprime le fond visible ou bordure parasite */
+        #coming-soon {
+            border: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
         }
 
-        /* === CONTENU TEXTE === */
+        #stay-connected {
+            margin-top: 0;
+            padding-top: 0;
+        }
+
+        /* === Texte === */
         .text-content {
             flex: 1 1 400px;
             max-width: 600px;
@@ -63,6 +65,7 @@
             font-size: clamp(1.6rem, 4vw, 2.4rem);
             line-height: 1.4;
             margin-bottom: 1.5rem;
+            font-weight: 700;
             letter-spacing: 0.5px;
         }
 
@@ -79,7 +82,7 @@
             color: #9a1f63;
             padding: 0.9rem 1.8rem;
             border-radius: 6px;
-            font-weight: bold;
+            font-weight: 600;
             transition: all 0.3s ease;
             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
         }
@@ -91,7 +94,7 @@
             transform: translateY(-3px);
         }
 
-        /* === CONTENU IMAGE === */
+        /* === Images === */
         .image-content {
             flex: 1 1 400px;
             text-align: center;
@@ -102,15 +105,17 @@
             max-width: 600px;
             height: auto;
             transition: transform 0.4s ease;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
         }
 
         .image-content img:hover {
             transform: scale(1.05);
         }
 
-        /* === SECTION : COMING SOON === */
+        /* === Section 1 === */
         #coming-soon {
-            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
             flex-direction: row-reverse;
         }
 
@@ -119,9 +124,7 @@
         }
 
         @keyframes bounce {
-
-            0%,
-            100% {
+            0%, 100% {
                 transform: translateY(0);
             }
 
@@ -130,17 +133,8 @@
             }
         }
 
-        /* === SECTION : RESTEZ CONNECTÉS === */
-        #stay-connected .image-content {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            flex-wrap: wrap;
-        }
-
+        /* === Section 2 === */
         #stay-connected .image-content img {
-            width: 100%;
-            max-width: 600px;
             border-radius: 12px;
             transition: transform 0.4s ease, filter 0.3s;
         }
@@ -150,7 +144,23 @@
             filter: brightness(1.1);
         }
 
-        /* === RESPONSIVE DESIGN === */
+        /* === TITRE FIXE SUR DESKTOP === */
+        @media (min-width: 1025px) {
+            .firstTitle {
+                position: absolute;
+                z-index: 999;
+                top: 50px;
+                left: 100px;
+                font-size: 55px !important;
+                font-weight: 700;
+                white-space: nowrap !important;
+            }
+             #turnLogo {
+                bottom: 28px !important;
+            }
+        }
+
+        /* === MOBILE & TABLETTE === */
         @media (max-width: 1024px) {
             section {
                 flex-direction: column;
@@ -167,79 +177,24 @@
                 order: 1;
             }
 
-            .text-content a {
-                margin-top: 1.5rem;
-            }
-        }
-
-        @media (max-width: 600px) {
-
-            .text-content h1,
-            .text-content h2 {
-                font-size: 1.5rem;
-            }
-
-            .text-content p {
-                font-size: 1rem;
-            }
-
-            .text-content a {
-                padding: 0.7rem 1.3rem;
-            }
-
-            section {
-                padding: 2.5rem 1.5rem;
-            }
-
-            .firstTitle {
-
-                text-align: center !important;
-            }
-        }
-
-        @media (min-width: 1025px) {
             .firstTitle {
                 position: absolute;
                 z-index: 999;
-                top: 50px;
-                left: 100px;
-                font-size: 55px !important;
+                top: 25px;
+                left: 10px;
+                font-size: 1.5rem !important;
+                font-weight: 700;
                 white-space: nowrap !important;
             }
         }
 
-        /* 📱 Tablette & Mobile — on annule tout */
-        @media (max-width: 1024px) {
-            .firstTitle {
-                position: static !important;
-                /* ou relative si tu veux */
-                top: auto !important;
-                left: auto !important;
-                transform: none !important;
-                z-index: auto !important;
-                text-align: center;
-
-                /* facultatif */
-                text-align: center !important;
-                margin: 1rem auto;
-            }
-
-            #stay-connected .image-content img {
-                width: 100%;
-                max-width: 600px;
-                border-radius: 12px;
-                transition: transform 0.4s ease, filter 0.3s;
-                height: 50vh !important;
-            }
-        }
-
+        /* === Bouton flottant === */
         #turnLogo {
             position: fixed;
-            bottom: 20px;
+            bottom: 8px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 9999;
-            /* pour rester au-dessus du contenu */
         }
 
         #turnLogo button {
@@ -266,13 +221,13 @@
 
         @media (max-width: 736px) {
             #turnLogo {
-                bottom: 60px;
+                bottom: 8px;
             }
         }
 
         @media (max-width: 636px) {
             #turnLogo {
-                bottom: 80px;
+                bottom: 8px;
             }
         }
     </style>
@@ -280,26 +235,25 @@
 
 <body>
 
-    <!-- === SECTION 1 : GALILEECOMMER ARRIVE === -->
+    <!-- === SECTION 1 === -->
     <section id="coming-soon">
-        <h1 class="firstTitle"> GALILEECOMMER.COM ARRIVE !</h1>
+        <h1 class="firstTitle">GALILEECOMMER.COM ARRIVE !</h1>
+
         <div class="image-content">
             <img src="img/comm1.png" alt="Homme sautant de joie">
         </div>
 
         <div class="text-content">
-
             <h2>
                 Enfin !<br>
                 L’incontournable plateforme digitale<br>
                 pour le commerce en Afrique<br>
                 arrive en novembre.
             </h2>
-
         </div>
     </section>
 
-    <!-- === SECTION 2 : RESTEZ CONNECTÉS <a href="#">Restez informé</a> === -->
+    <!-- === SECTION 2 === -->
     <section id="stay-connected">
         <div class="image-content">
             <img src="img/commi.png" alt="Personnes dynamiques">
@@ -314,9 +268,11 @@
             <img src="img/logo_white.png" alt="Logo Galilée Commerce" style="margin-top:2rem;width:260px;">
         </div>
     </section>
+
     <div id="turnLogo">
-        <button>Nos actualités</button>
+        <button>Actualités</button>
     </div>
+
     <script>
         document.getElementById("turnLogo").addEventListener("click", function () {
             window.location.href = "actualités.html";
