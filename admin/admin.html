@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestion des Actualités</title>
+
+    <!-- Firebase (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+    <!-- Tailwind -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        /* Loader centrée */
+        .loader {
+            border: 6px solid #eee;
+            border-top: 6px solid #4F46E5;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            animation: spin 1s linear infinite;
+            position: fixed;
+            inset: 0;
+            margin: auto;
+            z-index: 9999;
+            background-color: white;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .05);
+            z-index: 40;
+        }
+
+        /* Scroll liste emails */
+        .swal2-html-container ul {
+            padding-left: 1rem;
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 min-h-screen flex flex-col items-center p-6">
+
+    <!-- PRELOADER -->
+    <div id="preloader" class="hidden">
+        <div class="backdrop"></div>
+        <div class="loader"></div>
+    </div>
+
+    <!-- Formulaire -->
+    <div class="w-full max-w-lg bg-white shadow-lg rounded-xl p-6 mb-10">
+        <h2 class="text-2xl font-bold mb-4 text-center text-indigo-600">
+            <span id="formTitle">Publier une actualité</span>
+        </h2>
+
+        <form id="newsForm" class="space-y-4">
+            <input type="text" id="title" placeholder="Titre"
+                class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none bg-gray-50"
+                required />
+
+            <textarea id="content" placeholder="Contenu" rows="4"
+                class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none bg-gray-50"
+                required></textarea>
+
+            <!-- Image -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Image (Base64)</label>
+                <input type="file" id="imageInput" accept="image/*"
+                    class="w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                <div id="imagePreviewWrap" class="mt-3 hidden">
+                    <img id="imagePreview" class="w-32 h-32 object-cover rounded-lg shadow" />
+                </div>
+            </div>
+
+            <!-- PDF -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Fichier PDF (Base64)</label>
+                <input type="file" id="pdfInput" accept="application/pdf"
+                    class="w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                <p id="pdfName" class="mt-2 text-xs text-gray-500 hidden"></p>
+            </div>
+
+            <button type="submit"
+                class="w-full bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition font-semibold">
+                <span id="submitText">Publier</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Liste des actualités -->
+    <div class="w-full max-w-3xl">
+        <h2 class="text-2xl font-bold mb-4 text-gray-800 text-center">📢 Actualités publiées</h2>
+        <div id="newsList" class="grid gap-6 sm:grid-cols-2"></div>
+    </div>
+
+    <script>
+        /* --------- Firebase CONFIG --------- */
+        const firebaseConfig = {
+            apiKey: "AIzaSyCQCdoHAvlWNV3d8zAxoyVI02Sl1ZO49mo",
+            authDomain: "galileecommerce-4de35.firebaseapp.com",
+            databaseURL: "https://galileecommerce-4de35-default-rtdb.firebaseio.com",
+            projectId: "galileecommerce-4de35",
+            storageBucket: "galileecommerce-4de35.firebasestorage.app",
+            messagingSenderId: "345839145207",
+            appId: "1:345839145207:web:455bc947af40fd2c31c3f2"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        /* --------- DOM refs --------- */
+        const preloader = document.getElementById('preloader');
+        const newsForm = document.getElementById('newsForm');
+        const newsList = document.getElementById('newsList');
+        const imageInput = document.getElementById('imageInput');
+        const imagePreviewWrap = document.getElementById('imagePreviewWrap');
+        const imagePreview = document.getElementById('imagePreview');
+        const pdfInput = document.getElementById('pdfInput');
+        const pdfName = document.getElementById('pdfName');
+        const formTitle = document.getElementById('formTitle');
+        const submitText = document.getElementById('submitText');
+
+        /* --------- State --------- */
+        let imageBase64 = "";
+        let pdfBase64 = "";
+        let pdfOriginalName = "";
+        let editId = null;
+
+        /* --------- Helpers --------- */
+        const showLoader = show => preloader.classList.toggle('hidden', !show);
+
+        const fileToBase64 = file => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = e => resolve(e.target.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+
+        const formatDate = iso => {
+            try { return new Date(iso).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }); }
+            catch { return iso; }
+        };
+
+        const downloadBase64 = (base64DataUrl, filename) => {
+            const a = document.createElement('a');
+            a.href = base64DataUrl;
+            a.download = filename || 'document.pdf';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        };
+
+        /* --------- Inputs handlers --------- */
+        imageInput.addEventListener("change", async () => {
+            const file = imageInput.files[0];
+            if (!file) return;
+            imageBase64 = await fileToBase64(file);
+            imagePreview.src = imageBase64;
+            imagePreviewWrap.classList.remove('hidden');
+        });
+
+        pdfInput.addEventListener("change", async () => {
+            const file = pdfInput.files[0];
+            if (!file) { pdfBase64 = ""; pdfOriginalName = ""; pdfName.classList.add('hidden'); pdfName.textContent = ""; return; }
+            pdfBase64 = await fileToBase64(file);
+            pdfOriginalName = file.name;
+            pdfName.textContent = `PDF sélectionné : ${file.name}`;
+            pdfName.classList.remove('hidden');
+        });
+
+        /* --------- Create / Update --------- */
+        newsForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            const title = document.getElementById('title').value.trim();
+            const content = document.getElementById('content').value.trim();
+            if (!title || !content) return Swal.fire('Attention', 'Titre et contenu requis', 'warning');
+            if (!editId && !imageBase64) return Swal.fire('Image requise', 'Merci d’ajouter une image', 'info');
+
+            showLoader(true);
+            try {
+                if (editId) {
+                    await db.ref('news/' + editId).update({
+                        title, content,
+                        ...(imageBase64 && { image: imageBase64 }),
+                        ...(pdfBase64 && { pdf: pdfBase64, pdfName: pdfOriginalName })
+                    });
+                    Swal.fire('✅ Modifié', 'Actualité mise à jour', 'success');
+                } else {
+                    const newRef = db.ref('news').push();
+                    await newRef.set({
+                        id: newRef.key,
+                        title, content,
+                        image: imageBase64 || "",
+                        pdf: pdfBase64 || "",
+                        pdfName: pdfOriginalName || "",
+                        createdAt: new Date().toISOString(),
+                        downloads: 0,
+                        emails: []
+                    });
+                    Swal.fire('✅ Publié', 'Actualité ajoutée', 'success');
+                }
+                newsForm.reset();
+                imageBase64 = pdfBase64 = pdfOriginalName = "";
+                imagePreviewWrap.classList.add('hidden');
+                pdfName.classList.add('hidden'); pdfName.textContent = "";
+                editId = null; formTitle.textContent = 'Publier une actualité'; submitText.textContent = 'Publier';
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Erreur', 'Une erreur est survenue', 'error');
+            } finally { showLoader(false); }
+        });
+
+        /* --------- Render list --------- */
+        const renderList = items => {
+            newsList.innerHTML = "";
+            if (!items.length) { newsList.innerHTML = `<p class="text-gray-500 text-center">Aucune actualité publiée.</p>`; return; }
+
+            items.forEach(news => {
+                const card = document.createElement('div');
+                card.className = "bg-white shadow-md rounded-2xl overflow-hidden p-4 flex flex-col";
+
+                card.innerHTML = `
+    ${news.image ? `<img src="${news.image}" class="w-full h-44 object-cover rounded-lg mb-3">` : ''}
+    <h3 class="text-lg font-semibold text-gray-800">${news.title || ''}</h3>
+    <p class="text-gray-500 text-sm mt-1">${news.createdAt ? formatDate(news.createdAt) : ''}</p>
+    <p class="text-gray-700 mt-2 flex-1">${news.content || ''}</p>
+
+    <div class="flex items-center justify-between mt-4">
+        ${news.pdf ? `
+            <button class="flex items-center gap-1 px-2 py-1 bg-red-50 rounded-lg hover:bg-red-100"
+                onclick='downloadPDF("${news.id}")'>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                PDF (${news.downloads || 0})
+            </button>
+            <button class="flex items-center gap-1 px-2 py-1 bg-indigo-50 rounded-lg hover:bg-indigo-100"
+                onclick='showEmails("${news.id}")' title="Voir emails">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+            </button>
+        `: `<span class="text-xs text-gray-400">Aucun PDF</span>`}
+
+        <div class="flex items-center space-x-3">
+            <button class="p-2 bg-yellow-100 rounded-lg hover:bg-yellow-200 transition" title="Éditer" onclick='editNews("${news.id}")'>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-yellow-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-5m-7-7l7 7-3 3-7-7 3-3z" />
+                </svg>
+            </button>
+
+            <button class="p-2 bg-red-100 rounded-lg hover:bg-red-200 transition" title="Supprimer" onclick='deleteNews("${news.id}")'>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4m-4 0a1 1 0 00-1 1v1h6V4a1 1 0 00-1-1m-4 0h4" />
+                </svg>
+            </button>
+
+            ${news.pdf ? `
+            <button class="p-2 bg-green-100 rounded-lg hover:bg-green-200 transition" title="Copier URL PDF"
+                onclick='copyPDFUrl("${news.id}")'>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16h8m-8-4h8m-8-4h8M4 20h16V4H4v16z" />
+                </svg>
+            </button>
+            ` : ''}
+        </div>
+    </div>
+`;
+
+                newsList.appendChild(card);
+            });
+        };
+
+        /* --------- Subscribe to DB --------- */
+        const newsRef = db.ref('news').orderByChild('createdAt');
+        const loadNews = () => {
+            showLoader(true);
+            newsRef.on('value', snapshot => {
+                const val = snapshot.val() || {};
+                const arr = Object.values(val).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                renderList(arr);
+                showLoader(false);
+            }, () => showLoader(false));
+        };
+        loadNews();
+
+        /* --------- Edit / Delete --------- */
+        window.editNews = id => {
+            db.ref('news/' + id).once('value').then(snap => {
+                const data = snap.val();
+                if (!data) return;
+
+                document.getElementById('title').value = data.title || '';
+                document.getElementById('content').value = data.content || '';
+
+                imageBase64 = data.image || "";
+                if (imageBase64) { imagePreview.src = imageBase64; imagePreviewWrap.classList.remove('hidden'); }
+                else imagePreviewWrap.classList.add('hidden');
+
+                pdfBase64 = data.pdf || "";
+                pdfOriginalName = data.pdfName || "";
+                if (pdfOriginalName) { pdfName.textContent = `PDF actuel : ${pdfOriginalName}`; pdfName.classList.remove('hidden'); }
+                else { pdfName.classList.add('hidden'); pdfName.textContent = ""; }
+
+                editId = id;
+                formTitle.textContent = 'Modifier une actualité';
+                submitText.textContent = 'Mettre à jour';
+            });
+        };
+
+        window.deleteNews = id => {
+            Swal.fire({
+                title: 'Supprimer ?',
+                text: "Cette action est irréversible.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Oui, supprimer',
+                cancelButtonText: 'Annuler'
+            }).then(result => {
+                if (!result.isConfirmed) return;
+                showLoader(true);
+                db.ref('news/' + id).remove()
+                    .then(() => Swal.fire('✅ Supprimé', 'Actualité supprimée', 'success'))
+                    .catch(() => Swal.fire('Erreur', 'Impossible de supprimer', 'error'))
+                    .finally(() => showLoader(false));
+            });
+        };
+        window.copyPDFUrl = id => {
+            const origin = "https://gr-afcfta2100.org"
+            const url = `${origin}/infosdownload.html?id=${id}`;
+            navigator.clipboard.writeText(url)
+                .then(() => Swal.fire('✅ Copié', 'Le lien de téléchargement a été copié', 'success'))
+                .catch(() => Swal.fire('Erreur', 'Impossible de copier', 'error'));
+        };
+        /* --------- PDF download + emails --------- */
+        window.downloadPDF = async (id) => {
+            const { value: email } = await Swal.fire({
+                title: 'Entrez votre email pour télécharger',
+                input: 'email',
+                inputPlaceholder: 'email@example.com',
+                showCancelButton: true,
+                inputValidator: value => {
+                    if (!value) return 'Email requis';
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Email invalide';
+                }
+            });
+            if (!email) return;
+
+            const newsRef = db.ref('news/' + id);
+            newsRef.transaction(news => {
+                if (news) {
+                    news.downloads = (news.downloads || 0) + 1;
+                    news.emails = news.emails || [];
+                    news.emails.push(email);
+                }
+                return news;
+            });
+
+            const snap = await newsRef.once('value');
+            const data = snap.val();
+            if (data.pdf) downloadBase64(data.pdf, data.pdfName || 'document.pdf');
+            Swal.fire('✅ Téléchargé', 'Votre PDF a été téléchargé');
+        };
+
+        window.showEmails = async (id) => {
+            showLoader(true);
+            const snap = await db.ref('news/' + id + '/emails').once('value');
+            showLoader(false);
+            const emails = snap.val() || [];
+            if (!emails.length) return Swal.fire('Aucun email', 'Aucun téléchargement enregistré', 'info');
+            Swal.fire({
+                title: `Emails (${emails.length})`,
+                html: `<ul class="text-left max-h-60 overflow-auto">${emails.map(e => `<li>${e}</li>`).join('')}</ul>`,
+                width: 400,
+                confirmButtonText: 'Fermer'
+            });
+        };
+    </script>
+</body>
+
+</html>

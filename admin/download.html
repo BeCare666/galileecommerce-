@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GR AfCFTA 2100</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/i18next@23.4.6/dist/umd/i18next.min.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+        import { getDatabase, ref, get, child, set } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCQCdoHAvlWNV3d8zAxoyVI02Sl1ZO49mo",
+            authDomain: "galileecommerce-4de35.firebaseapp.com",
+            databaseURL: "https://galileecommerce-4de35-default-rtdb.firebaseio.com",
+            projectId: "galileecommerce-4de35",
+            storageBucket: "galileecommerce-4de35.firebasestorage.app",
+            messagingSenderId: "345839145207",
+            appId: "1:345839145207:web:455bc947af40fd2c31c3f2"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        i18next.init({
+            lng: "en",
+            resources: {
+                en: { translation: { "downloadTitle": "Program Download", "name": "Your name", "email": "Your email", "errorFields": "Please fill in all fields", "accessDeniedTitle": "Access denied", "accessDeniedMsg": "This email has already downloaded the document.", "loadingTitle": "Downloading...", "loadingText": "Please wait", "successTitle": "Congratulations 🎉", "successText": "Your download has started successfully!" } },
+                fr: { translation: { "downloadTitle": "Téléchargement du programme", "name": "Votre nom", "email": "Votre email", "errorFields": "Merci de remplir tous les champs", "accessDeniedTitle": "Accès refusé", "accessDeniedMsg": "Cet email a déjà téléchargé le document.", "loadingTitle": "Téléchargement en cours...", "loadingText": "Merci de patienter", "successTitle": "Félicitations 🎉", "successText": "Votre téléchargement a démarré avec succès !" } }
+            }
+        }).then(() => runApp());
+
+        async function runApp() {
+            const params = new URLSearchParams(window.location.search);
+            const newsId = params.get("id");
+            if (!newsId) return Swal.fire("Erreur", "ID introuvable", "error");
+
+            const snapshot = await get(child(ref(db), "news/" + newsId));
+            if (!snapshot.exists()) return Swal.fire("Erreur", "Actualité introuvable", "error");
+            const newsData = snapshot.val();
+
+            const { value: formValues } = await Swal.fire({
+                title: i18next.t("downloadTitle"),
+                html: `<input id="swal-name" class="swal2-input" placeholder="${i18next.t("name")}" required>
+               <input id="swal-email" type="email" class="swal2-input" placeholder="${i18next.t("email")}" required>`,
+                focusConfirm: false,
+                allowOutsideClick: false,
+                preConfirm: () => {
+                    const name = document.getElementById("swal-name").value.trim();
+                    const email = document.getElementById("swal-email").value.trim();
+                    if (!name || !email) Swal.showValidationMessage(i18next.t("errorFields"));
+                    return { name, email };
+                }
+            });
+            if (!formValues) return;
+
+            const { name, email } = formValues;
+
+            // Vérifie email
+            const emailSnap = await get(child(ref(db), "downloads/" + btoa(email) + "/" + newsId));
+            if (emailSnap.exists()) return Swal.fire({ icon: "error", title: i18next.t("accessDeniedTitle"), text: i18next.t("accessDeniedMsg") });
+
+            Swal.fire({ title: i18next.t("loadingTitle"), text: i18next.t("loadingText"), allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            // Save download
+            await set(ref(db, "downloads/" + btoa(email) + "/" + newsId), { name, email, date: new Date().toISOString() });
+
+            // Téléchargement PDF
+            if (newsData.pdf) {
+                const link = document.createElement("a");
+                link.href = newsData.pdf; // base64 ou url
+                link.download = newsData.pdfName || "document.pdf";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            Swal.fire({ icon: "success", title: i18next.t("successTitle"), text: i18next.t("successText") });
+        }
+    </script>
+    </body>
+
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="download.css">
+    <title>galileecommerce - Download</title>
+<link rel="icon" type="image/x-icon" href="img/logo_galile_mobile.png" />
+</head>
+
+<body>
+    <div class="card">
+        <!-- Image du header -->
+        <img src="pdf/imgdownload.jpg" alt="Card Image">
+
+        <!-- Contenu -->
+        <div class="card-content">
+            <h3 id="INDEXID1"></h3>
+            <p id="INDEXID2"></p>
+        </div>
+
+        <!-- Footer avec compteur et bouton -->
+        <div class="card-footer">
+            <span class="downloads" id="downloadCount" style="display: flex;">
+                <p id="downloadsCount">
+
+                </p>&nbsp;
+                <p id="INDEXID6">
+
+                </p>
+            </span>
+            <button class="btn-download" id="downloadBtn">
+                <!-- Icône Download -->
+
+            </button>
+        </div>
+    </div>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- i18next -->
+    <script src="https://unpkg.com/i18next@23.4.6/dist/umd/i18next.min.js"></script>
+
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+        import { getDatabase, ref, get, set, child } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+
+        // Config Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCQCdoHAvlWNV3d8zAxoyVI02Sl1ZO49mo",
+            authDomain: "galileecommerce-4de35.firebaseapp.com",
+            databaseURL: "https://galileecommerce-4de35-default-rtdb.firebaseio.com",
+            projectId: "galileecommerce-4de35",
+            storageBucket: "galileecommerce-4de35.firebasestorage.app",
+            messagingSenderId: "345839145207",
+            appId: "1:345839145207:web:455bc947af40fd2c31c3f2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const params = new URLSearchParams(window.location.search);
+        const savedLangpdf = params.get("lang") || "fr";
+        // Init i18next avec resources intégrées
+        i18next.init({
+            lng: savedLangpdf, // Langue par défaut
+            resources: {
+                en: {
+                    translation: {
+                        "INDEXID1": `SUPPORTING AFRICA’S CATCH-UP AND GEO-ECONOMIC EXPANSION TOWARDS 2100`,
+                        "INDEXID2": `<strong>GR-AfCFTA 2100 :</strong> A Strategic  Support Plan for Africa’s Catch-Up and Geo-Economic Expansion towards 2100
+                                `,
+                        "INDEXID6": `Downloads`,
+                        "INDEXID7": `Download`,
+                        "downloadBtn": `  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M12 3v12m0 0l4-4m-4 4l-4-4m-5 8h18" stroke="white" stroke-width="2" fill="none"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Download`,
+                        "downloadTitle": "Download the programme overview",
+                        "name": "Your name",
+                        "email": "Your email",
+                        "errorFields": "Please fill in all fields",
+                        "accessDeniedTitle": "Access denied",
+                        "accessDeniedMsg": "This email has already downloaded the document.",
+                        "loadingTitle": "Downloading...",
+                        "loadingText": "Please wait",
+                        "successTitle": "Congratulations 🎉",
+                        "successText": "Your download has started successfully!"
+                    }
+                },
+                fr: {
+                    translation: {
+                        "INDEXID1": `ACCOMPAGNER LE RATTRAPAGE ET L’EXPANSION GÉOÉCONOMIQUE DE L’AFRIQUE À L’HORIZON 2100.`,
+                        "INDEXID2": `<strong>GR-AfCFTA 2100 :</strong> <b>Un Plan d’appui stratégique pour le rattrapage et l’expansion géoéconomique de l’Afrique à l’horizon 2100</b>`,
+                        "INDEXID6": `téléchargements`,
+                        "INDEXID7": `Télécharger`,
+                        "downloadBtn": `  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M12 3v12m0 0l4-4m-4 4l-4-4m-5 8h18" stroke="white" stroke-width="2" fill="none"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Télécharger`,
+                        "downloadTitle": "Télécharger l'aperçu du programme",
+                        "name": "Votre nom",
+                        "email": "Votre email",
+                        "errorFields": "Merci de remplir tous les champs",
+                        "accessDeniedTitle": "Accès refusé",
+                        "accessDeniedMsg": "Cet email a déjà téléchargé le document.",
+                        "loadingTitle": "Téléchargement en cours...",
+                        "loadingText": "Merci de patienter",
+                        "successTitle": "Félicitations 🎉",
+                        "successText": "Votre téléchargement a démarré avec succès !"
+                    }
+                }
+            }
+        }).then(() => {
+            document.getElementById("INDEXID1").innerHTML = i18next.t("INDEXID1");
+            document.getElementById("INDEXID2").innerHTML = i18next.t("INDEXID2");
+            document.getElementById("INDEXID6").innerHTML = i18next.t("INDEXID6");
+            //document.getElementById("INDEXID7").innerHTML = i18next.t("INDEXID7");
+            document.getElementById("downloadBtn").innerHTML = i18next.t("downloadBtn");
+
+        });
+
+        async function runApp() {
+            const params = new URLSearchParams(window.location.search);
+            const savedLangpdf = params.get("lang") || "en"; // récupère ?lang=
+
+            // force la langue
+            await i18next.changeLanguage(savedLangpdf);
+
+            // Ouvre directement le formulaire
+            const { value: formValues } = await Swal.fire({
+                title: i18next.t("downloadTitle"),
+                html: `
+            <input id="swal-name" class="swal2-input" placeholder="${i18next.t(" name")}" required>
+            <input id="swal-email" type="email" class="swal2-input" placeholder="${i18next.t(" email")}" required>
+            `,
+                focusConfirm: false,
+                allowOutsideClick: false,
+                preConfirm: () => {
+                    const name = document.getElementById("swal-name").value.trim();
+                    const email = document.getElementById("swal-email").value.trim();
+                    if (!name || !email) {
+                        Swal.showValidationMessage(i18next.t("errorFields"));
+                        return false;
+                    }
+                    return { name, email };
+                }
+            });
+
+            if (!formValues) return;
+
+            const { name, email } = formValues;
+            const pdfUrlFr = "pdf/Aperçu-du-Programme-GR AfCFTA 2100-1.pdf";
+            const pdfUrlEn = "pdf/Overview-of-GR-AfcFTA-2100.pdf";
+            const selectedPdfBase64Url = savedLangpdf === "fr" ? pdfUrlFr : pdfUrlEn;
+            const fileName = savedLangpdf === "fr" ? "GR_AfcFTA_2100_FR.pdf" : "GR_AfcFTA_2100_EN.pdf";
+
+            // Vérifie email déjà utilisé
+            const snapshot = await get(child(ref(db), "isdownloads/" + btoa(email)));
+            if (snapshot.exists()) {
+                Swal.fire({
+                    icon: "error",
+                    title: i18next.t("accessDeniedTitle"),
+                    text: i18next.t("accessDeniedMsg")
+                });
+                return;
+            }
+
+            // Spinner
+            Swal.fire({
+                title: i18next.t("loadingTitle"),
+                text: i18next.t("loadingText"),
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            // Sauvegarde en DB
+            await set(ref(db, "isdownloads/" + btoa(email)), {
+                name,
+                email,
+                lang: savedLangpdf,
+                date: new Date().toISOString()
+            });
+
+            // Téléchargement du fichier
+            const link = document.createElement("a");
+            link.href = selectedPdfBase64Url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Succès
+            Swal.fire({
+                icon: "success",
+                title: i18next.t("successTitle"),
+                text: i18next.t("successText")
+            });
+        }
+
+        // Attacher l'événement au bouton
+        document.addEventListener("DOMContentLoaded", () => {
+            const btn = document.getElementById("downloadBtn");
+            btn.addEventListener("click", async () => {
+                await runApp();
+            });
+        });
+
+
+        // Récupérer le total des téléchargements
+        async function getTotalDownloads() {
+            const snapshot = await get(ref(db, "isdownloads"));
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                // Object.keys(data).length = nombre total d’entrées (donc d’emails uniques)
+                return Object.keys(data).length;
+            } else {
+                return 0;
+            }
+        }
+
+        // Afficher le nombre dans ton card
+        async function showDownloadsCount() {
+            const count = await getTotalDownloads();
+            document.getElementById("downloadsCount").textContent = count;
+        }
+
+        // Charger automatiquement au démarrage
+        document.addEventListener("DOMContentLoaded", () => {
+            showDownloadsCount();
+        });
+
+    </script>
+</body>
+
+</html>
