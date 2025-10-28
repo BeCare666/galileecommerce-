@@ -37,7 +37,7 @@
         }
 
         /* ✅ Supprime tout espace entre les sections */
-        section + section {
+        section+section {
             margin-top: 0;
             padding-top: 0;
         }
@@ -124,7 +124,9 @@
         }
 
         @keyframes bounce {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: translateY(0);
             }
 
@@ -155,7 +157,8 @@
                 font-weight: 700;
                 white-space: nowrap !important;
             }
-             #turnLogo {
+
+            #turnLogo {
                 bottom: 28px !important;
             }
         }
@@ -186,12 +189,14 @@
                 font-weight: 700;
                 white-space: nowrap !important;
             }
-                    #stay-connected .image-content {
-             max-height:40vh !important;
-        }
-        .text-content h2 {
-            text-align:left !important;
-        }
+
+            #stay-connected .image-content {
+                max-height: 40vh !important;
+            }
+
+            .text-content h2 {
+                text-align: left !important;
+            }
         }
 
         /* === Bouton flottant === */
@@ -243,7 +248,7 @@
 
     <!-- === SECTION 1 === -->
     <section id="coming-soon">
-        <h1 class="firstTitle">GALILEECOMMER.COM ARRIVE !</h1>
+        <h1 class="firstTitle">GALILEECOMMER.COM <br> ARRIVE !</h1>
 
         <div class="image-content">
             <img src="img/comm1.png" alt="Homme sautant de joie">
